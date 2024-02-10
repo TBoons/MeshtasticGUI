@@ -1,4 +1,4 @@
 from mesh import interface 
 
-def sendText(theText):
-	interface.sendText(text=theText)
+def sendText(theText, channelIndex):
+	interface.sendText(text=theText, channelIndex=channelIndex)
