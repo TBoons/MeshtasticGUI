@@ -10,6 +10,7 @@ def onReceive(packet, interface): # called when a packet arrives
 
 def triggerReceive(message, fromNode):
     __main__.updateReceivedMessages(message, fromNode)
+    print(f'Incoming Message: {message} from {fromNode}')
 
 def receiverThread():
     pub.subscribe(onReceive, "meshtastic.receive.text")

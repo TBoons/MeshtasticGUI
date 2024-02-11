@@ -1,8 +1,9 @@
 import tkinter as tk
+from tkinter import ttk
 import mesh
 import send
 import receive
-import threading
+import window_functions
 
 from pubsub import pub
 import datetime
@@ -11,20 +12,22 @@ userShortName = mesh.myNodeInfo["user"]["shortName"]
 
 def send_message_to_mesh(self):
     text = entry.get()
-    sendChannelIndex = channelIndex.get()
-    print(sendChannelIndex)
-    print("Entered text:", text)
+    #sendChannelIndex = channelIndex.get()
+    sendChannelIndex = mesh.theChans[channelSection.get()]
+    #print("Sending text:", text)
     send.sendText(text,int(sendChannelIndex))
+    print(f'Outgoing Messages: {text}')
     insert_message_text( formatMessage(f"{userShortName}: ", text), "left" )
     entry.delete(0, tk.END)
 
 # Create the main window
 root = tk.Tk()
+#root.protocol("WM_DELETE_WINDOW", window_functions.on_close)
 root.title("Meshtastic GUI")
 root.geometry("600x400")  # Set window size to 400x200 pixels
 
 # Create a label and text entry field for "Enter something"
-label_enter = tk.Label(root, text="Message:")
+label_enter = tk.Label(root, text="Send Message:")
 label_enter.pack()
 
 entry = tk.Entry(root, width=75)
@@ -36,16 +39,15 @@ entry.pack()
 # button.pack()
 
 # Create a label and text entry field for "Incoming Messages"
-label_incoming = tk.Label(root, text="Incoming Messages:")
+label_incoming = tk.Label(root, text="Message Thread:")
 label_incoming.pack()
 
 # Create a text area for incoming messages
 #text_area = tk.Text(root, height=5)
-text_area = tk.Text(root, height=10, width=40, state=tk.DISABLED)
+text_area = tk.Text(root, height=10, width=75, state=tk.DISABLED)
 text_area.tag_configure("right", justify="right")
 text_area.tag_configure("left", justify="left")
 text_area.pack()
-
 
 #USER and CHANNEL Info
 label_nodeInfo = tk.Label(root, text="User:")
@@ -55,11 +57,14 @@ nodeInfo.insert(tk.END, userShortName)
 nodeInfo.config(state=tk.DISABLED)
 nodeInfo.pack(side = "left")
 
-label_ChannelIndex = tk.Label(root, text="Channel Index:")
-label_ChannelIndex.pack(side = "left")
-channelIndex = tk.Entry(root, width=5)
-channelIndex.insert(tk.END, '0')
-channelIndex.pack(side = "left")
+label_channelSection = tk.Label(root, text="Channel:")
+label_channelSection.pack(side = "left")
+channelNames=list(mesh.theChans.keys())
+sel=tk.StringVar() # string variable for the Combobox
+channelSection=ttk.Combobox(root,values=channelNames,width=15,
+    textvariable=sel)
+channelSection.current(0)
+channelSection.pack(side = "left")
 
 def insert_message_text(message, direction):
     text_area.config(state=tk.NORMAL)  # Set state to normal to allow editing
@@ -75,14 +80,9 @@ def updateReceivedMessages(message, fromNode):
     insert_message_text( formatMessage(next(iter(fromNode)), receivedMessage), "right" )
 
 def function_in_thread():
-    while True:
-        receive.receiverThread()
+    receive.receiverThread()
+    root.after(500, function_in_thread)
 
-# Create a thread for the function
-thread = threading.Thread(target=function_in_thread)
-
-# Start the thread
-thread.start()
-
+function_in_thread()
 # Run the main event loop
 root.mainloop()
